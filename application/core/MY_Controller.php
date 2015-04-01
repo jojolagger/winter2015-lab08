@@ -31,14 +31,57 @@ class Application extends CI_Controller {
      * Render this page
      */
     function render() {
-        $this->data['menubar'] = $this->parser->parse('_menubar', $this->config->item('menu_choices'),true);
+		$this->data['menudata'] = $this->makemenu();
+		$this->data['menubar'] = $this->parser->parse('_menubar', $this->data,true);
         $this->data['content'] = $this->parser->parse($this->data['pagebody'], $this->data, true);
+		$this->data['sessionid'] = session_id();
 
         // finally, build the browser page!
         $this->data['data'] = &$this->data;
         $this->parser->parse('_template', $this->data);
     }
 
+	function restrict($roleNeeded = null) {
+		
+		if ($roleNeeded != null) {
+			if (is_array($roleNeeded)) {
+				if (!in_array($userRole, $roleNeeded)) {
+					redirect("/");
+					return;
+				}
+			} else if ($userRole != $roleNeeded) {
+				redirect("/");
+				return;
+			}
+		}
+	}
+	
+	function makemenu() {
+		$userRole = $this->session->userdata('userRole');
+		$userName = $this->session->userdata('name');
+		$menudata = array();
+		// make array, with menu choice for alpha
+		$menudata[] = array('name' => "Alpha", 'link' => '/alpha');
+		// if not logged in, add menu choice to login
+		if($userRole == null){
+			$menudata[] = array('name' => "Login", 'link' => '/auth');
+		}
+		// if user, add menu choice for beta and logout
+		if($userRole == ROLE_USER){
+			$menudata[] = array('name' => "Beta", 'link' => '/beta');
+			$menudata[] = array('name' => "Logout", 'link' => '/auth/logout');
+		}
+		// if admin, add menu choices for beta, gamma and logout
+		if($userRole == ROLE_ADMIN){
+			$menudata[] = array('name' => "Beta", 'link' => '/beta');
+			$menudata[] = array('name' => "Gamma", 'link' => '/gamma');
+			$menudata[] = array('name' => "Logout", 'link' => '/auth/logout');
+		}
+		return $menudata;
+	}
+
+
+	
 }
 
 /* End of file MY_Controller.php */
